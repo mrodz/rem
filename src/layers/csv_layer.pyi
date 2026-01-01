@@ -1,6 +1,5 @@
 from collections.abc import Callable
 from typing import Optional, Self, TypedDict, TypeVar
-
 from .layer import Point
 
 class PointDict(TypedDict):
@@ -10,7 +9,7 @@ class PointDict(TypedDict):
 
 class CSVImporter:
     mapping: PointDict
-    weight: float | Callable[[list[str]], float]
+    weight: Optional[float | Callable[[list[str]], float]]
 
     @classmethod
     def default(cls: type[Self]) -> Self: 
@@ -27,7 +26,7 @@ class CSVImporter:
         """
         ...
 
-    def __init__(self, mapping: PointDict, weight: float | Callable[[list[str]], float] = ...) -> None: ...
+    def __init__(self, mapping: PointDict, weight: Optional[float | Callable[[list[str]], float]] = ...) -> None: ...
     def __call__(self, header: list[str], row: list[str]) -> Point: ...
     
 _C = TypeVar("_C", bound=type)

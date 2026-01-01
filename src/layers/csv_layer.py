@@ -1,7 +1,7 @@
 import abc
 import csv
 from pathlib import Path
-from typing import Callable, TypedDict, Optional, Iterable
+from typing import Callable, TypedDict, Optional, Iterable, NotRequired
 from .layer import Point
 from dataclasses import dataclass
 
@@ -10,24 +10,29 @@ class PointDict(TypedDict):
     lat: str
     lon: str
     label: str
+    w: NotRequired[str]
 
 
 class CSVImporter:
     mapping: PointDict
-    weight: float | Callable[[list[str]], float]
+    weight: Optional[float | Callable[[list[str]], float]]
     __lat_idx: Optional[int] = None
     __lon_idx: Optional[int] = None
     __label_idx: Optional[int] = None
+    __weight_idx: Optional[int] = None
     
-    
-    def __init__(self, mapping: PointDict, weight: float | Callable[[list[str]], float] = 1.0):
+    def __init__(self, mapping: PointDict, weight: Optional[float | Callable[[list[str]], float]] = None):
         self.mapping = mapping
+        
+        if "w" not in mapping and weight is None:
+            raise ValueError('w was not provided in mapping, nor a weight generation method')
+        
         self.weight = weight
         
     
     @classmethod
     def default(cls):
-        return cls({ "lat": "lat", "lon": "lon", "label": "label" }, 1)    
+        return cls({ "lat": "lat", "lon": "lon", "label": "label", "w": "w" })    
     
     
     def __label(self, header: list[str], row: list[str]) -> str:
@@ -66,12 +71,28 @@ class CSVImporter:
         return row[self.__lon_idx]
     
     
+    def __w(self, header: list[str], row: list[str]) -> str | float:
+        if self.weight is not None:
+            return self.weight(row) if callable(self.weight) else self.weight
+        
+        if self.__weight_idx is not None:
+            return row[self.__weight_idx]
+
+        assert 'w' in self.mapping # by constructor
+        
+        try:
+            self.__weight_idx = header.index(self.mapping["w"])
+        except ValueError:
+            raise TypeError(f"{self.mapping["w"]} is not in the header")
+            
+        return row[self.__weight_idx]
+    
+    
     def __call__(self, header: list[str], row: list[str]) -> Point:
         label = self.__label(header, row)
         lat = float(self.__lat(header, row))
         lon = float(self.__lon(header, row))
-        
-        w = float(self.weight(row) if callable(self.weight) else self.weight)
+        w = float(self.__w(header, row))
         
         return Point(lat=lat, lon=lon, w=w, label=label)
 

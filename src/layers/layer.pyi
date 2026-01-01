@@ -68,6 +68,20 @@ class Layer(ABC):
         """
         ...
     
+    @abstractmethod
+    def radius(self) -> int:
+        """
+        Return the radius of the heat map bubbles this layer produces
+        """
+        ...
+        
+    @abstractmethod
+    def icon(self) -> folium.Icon:
+        """
+        Icon for the markers produced by this layer
+        """
+        ...
+        
     
 class Stack:
     """
@@ -75,11 +89,7 @@ class Stack:
     """
     
     def __init__(self) -> None: ...
-        
     def add(self, layer: Layer): ...
-    
     def center(self) -> tuple[float, float]: ...
-                
     def __str__(self) -> str: ...
-    
     def render(self) -> folium.Map: ...
